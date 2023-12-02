@@ -2,7 +2,7 @@
 This is a very simple interactive web shell
 
 
-Contains the fol;lowing functinalities
+Contains the following functinalities
 🕷️ File Viewing and Navigation:
 
     Display file contents and directory listing.
