@@ -39,7 +39,7 @@ Contains the following functinalities
 
     Simple and responsive user interface.
     List files and directories in the current directory.
-================================================================================================================
+--------------------------------------------------------------------------------------------
 
 # Database Viewer
 
