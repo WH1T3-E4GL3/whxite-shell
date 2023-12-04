@@ -22,15 +22,39 @@
         th {
             background-color: #f2f2f2;
         }
+        .edit-input {
+            width: 80%;
+        }
     </style>
 </head>
 <body>
 
 <?php
-$dbCon = mysqli_connect("localhost", "username", "password", "db_name");
+$dbCon = mysqli_connect("localhost", "rnarlnmuac_web", "t@c55#143CO", "rnarlnmuac_web");
 
 if (!$dbCon) {
     die("Connection failed: " . mysqli_connect_error());
+}
+
+// Handle inline editing
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
+    $action = $_POST['action'];
+
+    if ($action === 'edit') {
+        $id = $_POST['id'];
+        $column = $_POST['column'];
+        $value = $_POST['value'];
+
+        $update_query = "UPDATE $selectedTable SET $column = '$value' WHERE id = $id";
+        mysqli_query($dbCon, $update_query);
+        exit();
+    } elseif ($action === 'delete') {
+        $id = $_POST['id'];
+
+        $delete_query = "DELETE FROM $selectedTable WHERE id = $id";
+        mysqli_query($dbCon, $delete_query);
+        exit();
+    }
 }
 
 // Fetch databases
@@ -78,7 +102,7 @@ if (isset($_GET['db']) && isset($_GET['table'])) {
     if ($result_data) {
         echo "<h3>Data:</h3>";
         echo "<table>";
-        echo "<tr>";
+        echo "<tr><th>Action</th>";
         while ($row_data = mysqli_fetch_assoc($result_data)) {
             foreach ($row_data as $key => $value) {
                 echo "<th>$key</th>";
@@ -86,19 +110,96 @@ if (isset($_GET['db']) && isset($_GET['table'])) {
             break;
         }
         echo "</tr>";
+        mysqli_data_seek($result_data, 0); // Reset the result set pointer
         while ($row_data = mysqli_fetch_assoc($result_data)) {
+            $id = $row_data['id']; // Assuming 'id' is the primary key
             echo "<tr>";
-            foreach ($row_data as $value) {
-                echo "<td>$value</td>";
+            echo "<td>
+                    <button onclick='editRow($id)'>Edit</button>
+                    <button onclick='deleteRow($id)'>Delete</button>
+                  </td>";
+            foreach ($row_data as $key => $value) {
+                echo "<td id='cell-$id-$key'>$value</td>";
             }
             echo "</tr>";
         }
         echo "</table>";
     }
 }
-
-mysqli_close($dbCon);
 ?>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+    function editRow(id) {
+        $('td[id^="cell-' + id + '"]').each(function () {
+            let columnName = $(this).attr('id').split('-')[2];
+            let columnValue = $(this).text();
+            $(this).html(`<input class="edit-input" type="text" id="edit-${id}-${columnName}" value="${columnValue}">`);
+        });
+
+        // Add save button
+        $(`#cell-${id}-id`).parent().append(`
+            <button onclick="saveRow(${id})">Save</button>
+            <button onclick="cancelEdit(${id})">Cancel</button>
+        `);
+    }
+
+    function saveRow(id) {
+        $('td[id^="cell-' + id + '"]').each(function () {
+            let columnName = $(this).attr('id').split('-')[2];
+            let newValue = $(`#edit-${id}-${columnName}`).val();
+            $(this).html(newValue);
+            // Send AJAX request to update value in the database
+            updateDatabase(id, columnName, newValue);
+        });
+    }
+
+    function cancelEdit(id) {
+        $('td[id^="cell-' + id + '"]').each(function () {
+            let columnName = $(this).attr('id').split('-')[2];
+            let originalValue = $(this).text();
+            $(this).html(originalValue);
+        });
+    }
+
+    function deleteRow(id) {
+        // Send AJAX request to delete row from the database
+        if (confirm('Are you sure you want to delete this row?')) {
+            deleteFromDatabase(id);
+            $(`tr:has(td:contains("${id}"))`).remove();
+        }
+    }
+
+    function updateDatabase(id, column, value) {
+        $.ajax({
+            type: 'POST',
+            url: window.location.href,
+            data: {
+                action: 'edit',
+                id: id,
+                column: column,
+                value: value
+            },
+            success: function (response) {
+                console.log(response);
+            }
+        });
+    }
+
+    function deleteFromDatabase(id) {
+        $.ajax({
+            type: 'POST',
+            url: window.location.href,
+            data: {
+                action: 'delete',
+                id: id
+            },
+            success: function (response) {
+                console.log(response);
+            }
+        });
+    }
+</script>
 
 </body>
 </html>
