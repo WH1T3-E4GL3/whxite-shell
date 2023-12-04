@@ -39,3 +39,8 @@ Contains the following functinalities
 
     Simple and responsive user interface.
     List files and directories in the current directory.
+================================================================================================================
+
+# Database Viewer
+
+DatabaseViewer.php is just a file to view the database structure and its data of a website. You need to provide the credentials and it will show the database strutured. You can navigate through the database and view the data contained in it
